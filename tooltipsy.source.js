@@ -91,12 +91,21 @@
             var tip_position = [
                 (function (pos) {
                     if (base.settings.offset[0] < 0) {
+                        alert('1.');
                         return pos.left - Math.abs(base.settings.offset[0]) - base.width;
                     }
                     else if (base.settings.offset[0] === 0) {
-                        return pos.left - ((base.width - base.$el.outerWidth()) / 2);
+                        var viewport_width = $(window).width(),
+                            tipsy_outer_width = base.$tipsy.outerWidth(),
+                            tmpPos =  pos.left - ((base.width - base.$el.outerWidth()) / 2);
+                        if((tmpPos + tipsy_outer_width) > viewport_width) {
+                            tmpPos = viewport_width - tipsy_outer_width;
+                        }
+                        
+                        return tmpPos < 0 ? 0 : tmpPos;
                     }
                     else {
+                        alert('3.');
                         return pos.left + base.$el.outerWidth() + base.settings.offset[0];
                     }
                 })(base.offset(base.$el[0])),
