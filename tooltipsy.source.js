@@ -111,12 +111,19 @@
                 })(base.offset(base.$el[0])),
                 (function (pos) {
                     if (base.settings.offset[1] < 0) {
-                        return pos.top - Math.abs(base.settings.offset[1]) - base.height;
+                        var viewport_height = $(window).height(),
+                            tipsy_outer_height = base.$tipsy.outerHeight(),
+                            tmpPos = pos.top - Math.abs(base.settings.offset[1]) - base.height;
+                        if((tmpPos + tipsy_outer_height) > viewport_height) {
+                            tmpPos = viewport_height - tipsy_outer_width;
+                        }
+                        return tmpPos < 0 ? 0 : tmpPos;
                     }
                     else if (base.settings.offset[1] === 0) {
                         return pos.top - ((base.height - base.$el.outerHeight()) / 2);
                     }
                     else {
+                        alert('3');
                         return pos.top + base.$el.outerHeight() + base.settings.offset[1];
                     }
                 })(base.offset(base.$el[0]))
