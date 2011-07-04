@@ -54,10 +54,10 @@
                 base.enter(e);
             }
         }).bind('mouseleave', function (e) {
-            if(base.settings.delayOut > 0) {
+            if(base.settings.delayOut > 0) {                
+                window.clearTimeout(base.delaytimer);
+                base.delaytimer = null;
                 base.delayouttimer = window.setTimeout(function() {
-                    window.clearTimeout(base.delaytimer);
-                    base.delaytimer = null;
                     base.leave(e);
                 }, base.settings.delayOut);
             }
@@ -71,7 +71,7 @@
 
     $.tooltipsy.prototype.enter = function (e) {
         var base = this;
-
+        
         if (base.ready === false) {
             base.readify();
         }
@@ -219,6 +219,7 @@
                     return;
                 }
                 base.settings.hide(e, base.$tipsy.stop(true, true));
+                tipsy_open = false;
             });
             return;
         }
@@ -268,6 +269,8 @@
     };
 
     $.fn.tooltipsy = function(options) {
+        var tipsy_open = false;
+        
         return this.each(function() {
             new $.tooltipsy(this, options);
         });
