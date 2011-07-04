@@ -104,19 +104,69 @@
         else {
             var tip_position = [this.getPosX(base.$el[0]), this.getPosY(base.offset(base.$el[0]))];
         }
+        
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
+        
+        if(base.settings.pointer) {
+            var pointer_position = [(function() {
+                var tipsy_top = base.$tipsy.offset().top,
+                    tipsy_bottom = base.$tipsy.offset().top + base.$tipsy.outerHeight(),
+                    el_top = base.$el.offset().top,
+                    el_bottom = base.$el.offset().top + base.$el.outerHeight();
+
+                if(tipsy_bottom - base.$pointer.outerHeight() < el_top) {
+                    // bottom
+                    base.$pointer.data('facing', 's');
+                    return tipsy_bottom;
+                }
+                else if(tipsy_top + base.$pointer.outerHeight() > el_bottom) {
+                    // top
+                    base.$pointer.data('facing', 'n');
+                    return -1 * base.$pointer.outerHeight();
+                }
+                else {
+                    // center
+                    return base.$el.offset().top + ((base.$el.height() - base.$pointer.height()) / 2);
+                }
+            })(),
+            (function() {
+                var tipsy_left = base.$tipsy.offset().left,
+                    tipsy_right = base.$tipsy.offset().left + base.$tipsy.outerWidth(),
+                    el_left = base.$el.offset().left,
+                    el_right = base.$el.offset().left + base.$el.outerWidth(),
+                    pointer_facing = base.$pointer.data('facing') ? base.$pointer.data('facing') : '';
+
+                if(tipsy_left - base.$pointer.outerWidth() > el_right) {
+                    // left
+                    base.$pointer.data('facing', pointer_facing + 'w');
+                    return -1 * base.$pointer.outerWidth();
+                }
+                else if(tipsy_right + base.$pointer.outerWidth() < el_left) {
+                    // right
+                    base.$pointer.data('facing', pointer_facing + 'e');
+                    return base.$tipsy.outerWidth();
+                }
+                else {
+                    return (base.$el.offset().left - base.$tipsy.offset().left) + ((base.$el.width() - base.$pointer.width()) / 2);
+                }
+            })()];
+
+            base.$pointer.css({top: pointer_position[0], left: pointer_position[1]});
+            base.$pointer.addClass('pointer-' + base.$pointer.data('facing'));
+        }
     };
 
     $.tooltipsy.prototype.getPosX = function(pos) {
         var tmpPos,
-            offset = this.$el.offset();
+            offset = this.$el.offset(),
+            pointer_width = (this.settings.pointer ? this.$pointer.outerWidth() : 0);
         if (this.settings.offset[0] < 0) {
             if(offset.left < this.$tipsy.outerWidth()) {
-                return Math.abs(this.settings.offset[0]) + offset.left + this.$el.width();
+                return Math.abs(this.settings.offset[0]) + offset.left + this.$el.width() + pointer_width;
             }
             else {
-                return offset.left - Math.abs(this.settings.offset[0]) - this.width;
+                return offset.left - Math.abs(this.settings.offset[0]) - this.width - pointer_width;
             }
         }
         else if (this.settings.offset[0] === 0) {
@@ -131,15 +181,17 @@
         }
         else {
             if((offset.left + this.width) > $(window).width()) {
-                return offset.left - this.width - Math.abs(this.settings.offset[0]);
+                return offset.left - this.width - Math.abs(this.settings.offset[0]) - pointer_width;
             }
             else {
-                return offset.left + this.$el.outerWidth() + this.settings.offset[0];
+                return offset.left + this.$el.outerWidth() + this.settings.offset[0] + pointer_width;
             }
         }
     };
     
     $.tooltipsy.prototype.getPosY = function(pos) {
+        var pointer_height = (this.settings.pointer ? this.$pointer.outerHeight() : 0);
+        
         if (this.settings.offset[1] < 0) {
             var viewport_height = $(window).height(),
                 tipsy_outer_height = this.$tipsy.outerHeight(),
@@ -150,10 +202,11 @@
             return tmpPos < 0 ? 0 : tmpPos;
         }
         else if (this.settings.offset[1] === 0) {
-            return pos.top - ((this.height - this.$el.outerHeight()) / 2);
+            var tmpPos = pos.top - ((this.height - this.$el.outerHeight()) / 2);
+            return tmpPos < 0 ? 0 : tmpPos;
         }
         else {
-            return pos.top + this.$el.outerHeight() + this.settings.offset[1];
+            return pos.top + this.$el.outerHeight() + this.settings.offset[1] + pointer_height;
         }
     }
 
@@ -176,8 +229,10 @@
         var base = this;
         this.ready = true;
         this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483647;display:none">').appendTo('body');
+        this.$pointer = $('<div id="pointer' + this.random + '" style="position:absolute;" class="pointer">').appendTo(this.$tipsy);
         this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title);
         this.$tip.data('rootel', this.$el);
+        
         this.$tipsy.hover(function() {
             window.clearTimeout(base.delayouttimer);
         }, function() {
@@ -208,7 +263,8 @@
         },
         css: {},
         className: 'tooltipsy',
-        delay: 200
+        delay: 200,
+        pointer: false
     };
 
     $.fn.tooltipsy = function(options) {
