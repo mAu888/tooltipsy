@@ -88,27 +88,7 @@
             }
         }
         else {
-            var tip_position = [
-                (function (pos) {
-                    if (base.settings.offset[0] < 0) {
-                        alert('1.');
-                        return pos.left - Math.abs(base.settings.offset[0]) - base.width;
-                    }
-                    else if (base.settings.offset[0] === 0) {
-                        var viewport_width = $(window).width(),
-                            tipsy_outer_width = base.$tipsy.outerWidth(),
-                            tmpPos =  pos.left - ((base.width - base.$el.outerWidth()) / 2);
-                        if((tmpPos + tipsy_outer_width) > viewport_width) {
-                            tmpPos = viewport_width - tipsy_outer_width;
-                        }
-                        
-                        return tmpPos < 0 ? 0 : tmpPos;
-                    }
-                    else {
-                        alert('3.');
-                        return pos.left + base.$el.outerWidth() + base.settings.offset[0];
-                    }
-                })(base.offset(base.$el[0])),
+            var tip_position = [this.getPosX(base.$el[0]),
                 (function (pos) {
                     if (base.settings.offset[1] < 0) {
                         var viewport_height = $(window).height(),
@@ -123,7 +103,6 @@
                         return pos.top - ((base.height - base.$el.outerHeight()) / 2);
                     }
                     else {
-                        alert('3');
                         return pos.top + base.$el.outerHeight() + base.settings.offset[1];
                     }
                 })(base.offset(base.$el[0]))
@@ -131,6 +110,37 @@
         }
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
+    };
+
+    $.tooltipsy.prototype.getPosX = function(pos) {
+        var tmpPos,
+            offset = this.$el.offset();
+        if (this.settings.offset[0] < 0) {
+            if(offset.left < this.$tipsy.outerWidth()) {
+                return Math.abs(this.settings.offset[0]) + offset.left + this.$el.width();
+            }
+            else {
+                return offset.left - Math.abs(this.settings.offset[0]) - this.width;
+            }
+        }
+        else if (this.settings.offset[0] === 0) {
+            var viewport_width = $(window).width(),
+                tipsy_outer_width = this.$tipsy.outerWidth(),
+                tmpPos =  pos.left - ((this.width - this.$el.outerWidth()) / 2);
+            if((tmpPos + tipsy_outer_width) > viewport_width) {
+                tmpPos = viewport_width - tipsy_outer_width;
+            }
+            
+            return tmpPos < 0 ? 0 : tmpPos;
+        }
+        else {
+            if((offset.left + this.width) > $(window).width()) {
+                return offset.left - this.width - Math.abs(this.settings.offset[0]);
+            }
+            else {
+                return offset.left + this.$el.outerWidth() + this.settings.offset[0];
+            }
+        }
     };
 
     $.tooltipsy.prototype.leave = function (e) {
