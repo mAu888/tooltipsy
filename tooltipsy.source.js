@@ -24,6 +24,7 @@
         this.width = 0;
         this.height = 0;
         this.delaytimer = null;
+        this.delayouttimer = null;
 
         this.$el.data("tooltipsy", this);
         this.init();
@@ -42,16 +43,29 @@
         base.$el.bind('mouseenter', function (e) {
             if (base.settings.delay > 0) {
                 base.delaytimer = window.setTimeout(function () {
+                    window.clearTimeout(base.delayouttimer);
+                    base.delayouttimer = null;
                     base.enter(e);
                 }, base.settings.delay);
             }
             else {
+                window.clearTimeout(base.delayouttimer);
+                base.delayouttimer = null;
                 base.enter(e);
             }
         }).bind('mouseleave', function (e) {
-            window.clearTimeout(base.delaytimer);
-            base.delaytimer = null;
-            base.leave(e);
+            if(base.settings.delayOut > 0) {
+                base.delayouttimer = window.setTimeout(function() {
+                    window.clearTimeout(base.delaytimer);
+                    base.delaytimer = null;
+                    base.leave(e);
+                }, base.settings.delayOut);
+            }
+            else {
+                window.clearTimeout(base.delaytimer);
+                base.delaytimer = null;
+                base.leave(e);
+            }
         });
     };
 
@@ -88,25 +102,7 @@
             }
         }
         else {
-            var tip_position = [this.getPosX(base.$el[0]),
-                (function (pos) {
-                    if (base.settings.offset[1] < 0) {
-                        var viewport_height = $(window).height(),
-                            tipsy_outer_height = base.$tipsy.outerHeight(),
-                            tmpPos = pos.top - Math.abs(base.settings.offset[1]) - base.height;
-                        if((tmpPos + tipsy_outer_height) > viewport_height) {
-                            tmpPos = viewport_height - tipsy_outer_width;
-                        }
-                        return tmpPos < 0 ? 0 : tmpPos;
-                    }
-                    else if (base.settings.offset[1] === 0) {
-                        return pos.top - ((base.height - base.$el.outerHeight()) / 2);
-                    }
-                    else {
-                        return pos.top + base.$el.outerHeight() + base.settings.offset[1];
-                    }
-                })(base.offset(base.$el[0]))
-            ];
+            var tip_position = [this.getPosX(base.$el[0]), this.getPosY(base.offset(base.$el[0]))];
         }
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
@@ -126,7 +122,7 @@
         else if (this.settings.offset[0] === 0) {
             var viewport_width = $(window).width(),
                 tipsy_outer_width = this.$tipsy.outerWidth(),
-                tmpPos =  pos.left - ((this.width - this.$el.outerWidth()) / 2);
+                tmpPos =  offset.left - ((this.width - this.$el.outerWidth()) / 2);
             if((tmpPos + tipsy_outer_width) > viewport_width) {
                 tmpPos = viewport_width - tipsy_outer_width;
             }
@@ -142,6 +138,24 @@
             }
         }
     };
+    
+    $.tooltipsy.prototype.getPosY = function(pos) {
+        if (this.settings.offset[1] < 0) {
+            var viewport_height = $(window).height(),
+                tipsy_outer_height = this.$tipsy.outerHeight(),
+                tmpPos = pos.top - Math.abs(this.settings.offset[1]) - this.height;
+            if((tmpPos + tipsy_outer_height) > viewport_height) {
+                tmpPos = viewport_height - tipsy_outer_width;
+            }
+            return tmpPos < 0 ? 0 : tmpPos;
+        }
+        else if (this.settings.offset[1] === 0) {
+            return pos.top - ((this.height - this.$el.outerHeight()) / 2);
+        }
+        else {
+            return pos.top + this.$el.outerHeight() + this.settings.offset[1];
+        }
+    }
 
     $.tooltipsy.prototype.leave = function (e) {
         var base = this;
@@ -159,10 +173,16 @@
     };
 
     $.tooltipsy.prototype.readify = function () {
+        var base = this;
         this.ready = true;
         this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483647;display:none">').appendTo('body');
         this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title);
         this.$tip.data('rootel', this.$el);
+        this.$tipsy.hover(function() {
+            window.clearTimeout(base.delayouttimer);
+        }, function() {
+            base.$el.mouseleave();
+        });
     };
 
     $.tooltipsy.prototype.offset = function (el) {
