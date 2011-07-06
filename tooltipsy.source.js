@@ -58,6 +58,9 @@
                 base.enter(e);
             }
         }).bind('mouseleave', function (e) {
+            if($(e.relatedTarget).parents().filter(base.$tipsy).length > 0) {
+              return false;
+            }
             if(base.settings.delayOut > 0) {                
                 window.clearTimeout(base.delaytimer);
                 base.delaytimer = null;
@@ -230,7 +233,14 @@
             return tmpPos < 0 ? 0 : tmpPos;
         }
         else {
-            return pos.top + this.$el.outerHeight() + this.settings.offset[1] + pointer_height;
+            var tipsy_top = pos.top + this.$el.outerHeight() + this.settings.offset[1] + pointer_height,
+                tipsy_bottom = tipsy_top + this.$tipsy.outerHeight();
+            if(tipsy_bottom > $(window).height()) {
+                return pos.top - this.$tipsy.outerHeight() - this.$pointer.outerHeight();
+            }
+            else {
+                return tipsy_top;
+            }
         }
     }
 
@@ -292,12 +302,15 @@
     }
 
     $.tooltipsy.prototype.overlaps = function () {
-        if(this.right >= this.$el.center.left && this.bottom >= this.$el.center.top && this.left <= this.$el.center.left && this.top <= this.$el.center.top) {
+        if((this.$tipsy.offset().left + this.$tipsy.outerWidth()) >= this.$el.center.left
+            && (this.$tipsy.offset().top + this.$tipsy.outerHeight()) >= this.$el.center.top
+            && this.$tipsy.offset().left <= this.$el.center.left
+            && this.$tipsy.offset().top <= this.$el.center.top) {
             return true;
         }
         
         return false;
-    }
+    } 
 
     $.tooltipsy.prototype.defaults = {
         alignTo: 'element',
