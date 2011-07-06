@@ -23,6 +23,10 @@
         this.shown = false;
         this.width = 0;
         this.height = 0;
+        this.left = 0;
+        this.top = 0;
+        this.right = 0;
+        this.bottom = 0;
         this.delaytimer = null;
         this.delayouttimer = null;
 
@@ -90,7 +94,21 @@
             }
             base.width = base.$tipsy.outerWidth();
             base.height = base.$tipsy.outerHeight();
+            base.left = base.$tipsy.offset().left;
+            base.top = base.$tipsy.offset().top;
+            base.right = base.$tipsy.offset().left + base.width;
+            base.bottom = base.$tipsy.offset().top + base.height;
+            base.$el.center = {
+                top: (function() {
+                    return base.$el.offset().top + Math.abs(base.$el.outerHeight());
+                })(),
+                left: (function() {
+                    return base.$el.offset().left + Math.abs(base.$el.outerWidth());
+                })()
+            };
         }
+
+        base.shown = true;
 
         if (base.settings.alignTo === 'cursor') {
             var tip_position = [e.pageX + base.settings.offset[0], e.pageY + base.settings.offset[1]];
@@ -108,7 +126,8 @@
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
         
-        if(base.settings.pointer) {
+        var overlaps = base.overlaps();
+        if(base.settings.pointer && ! overlaps) {
             var pointer_position = [(function() {
                 var tipsy_top = base.$tipsy.offset().top,
                     tipsy_bottom = base.$tipsy.offset().top + base.$tipsy.outerHeight(),
@@ -123,7 +142,7 @@
                 else if(tipsy_top + base.$pointer.outerHeight() > el_bottom) {
                     // top
                     base.$pointer.data('facing', 'n');
-                    return -1 * base.$pointer.outerHeight();
+                    return -1 * base.$pointer.outerHeight() + 1;
                 }
                 else {
                     // center
@@ -154,6 +173,10 @@
 
             base.$pointer.css({top: pointer_position[0], left: pointer_position[1]});
             base.$pointer.addClass('pointer-' + base.$pointer.data('facing'));
+            base.$pointer.show();
+        }
+        else {
+            base.$pointer.hide();
         }
     };
 
@@ -229,11 +252,26 @@
     $.tooltipsy.prototype.readify = function () {
         var base = this;
         this.ready = true;
-        this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483647;display:none">').appendTo('body');
-        this.$pointer = $('<div id="pointer' + this.random + '" style="position:absolute;" class="pointer">').appendTo(this.$tipsy);
-        this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title);
-        this.$tip.data('rootel', this.$el);
+        if(this.settings.container.tipsy && this.settings.container.tip && this.settings.container.pointer) {
+          this.$tipsy = $(this.settings.container.tipsy);
+          this.$tip = $(this.settings.container.tip);
+          this.$pointer = $(this.settings.container.pointer);
+          
+          this.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
+        }
+        else {
+          this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483646;display:none">').appendTo('body');
+          this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title); 
+          this.$pointer = $('<div id="pointer' + this.random + '" style="position:absolute;" class="pointer">').appendTo(this.$tipsy);
+        }
         
+        this.$tipsy.hover(function() {
+          base.$tipsy.css({zIndex: '2147483647'});
+        }, function() {
+          base.$tipsy.css({zIndex: '2147483646'});
+        });
+        
+        this.$tip.data('rootel', this.$el);
         this.$tipsy.hover(function() {
             window.clearTimeout(base.delayouttimer);
         }, function() {
@@ -252,9 +290,18 @@
         return {left : ol, top : ot};
     }
 
+    $.tooltipsy.prototype.overlaps = function () {
+        if(this.right >= this.$el.center.left && this.bottom >= this.$el.center.top && this.left <= this.$el.center.left && this.top <= this.$el.center.top) {
+            return true;
+        }
+        
+        return false;
+    }
+
     $.tooltipsy.prototype.defaults = {
         alignTo: 'element',
         offset: [0, -1],
+        container: {},
         content: '',
         show: function (e, $el) {
             $el.fadeIn(100);
@@ -269,8 +316,6 @@
     };
 
     $.fn.tooltipsy = function(options) {
-        var tipsy_open = false;
-        
         return this.each(function() {
             new $.tooltipsy(this, options);
         });
