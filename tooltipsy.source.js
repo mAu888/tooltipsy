@@ -100,10 +100,10 @@
             base.bottom = base.$tipsy.offset().top + base.height;
             base.$el.center = {
                 top: (function() {
-                    return base.$el.offset().top + Math.abs(base.$el.outerHeight());
+                    return base.$el.offset().top + Math.abs(base.$el.outerHeight() / 2);
                 })(),
                 left: (function() {
-                    return base.$el.offset().left + Math.abs(base.$el.outerWidth());
+                    return base.$el.offset().left + Math.abs(base.$el.outerWidth() / 2);
                 })()
             };
         }
@@ -128,6 +128,8 @@
         
         var overlaps = base.overlaps();
         if(base.settings.pointer && ! overlaps) {
+            base.$pointer.show();
+        
             var pointer_position = [(function() {
                 var tipsy_top = base.$tipsy.offset().top,
                     tipsy_bottom = base.$tipsy.offset().top + base.$tipsy.outerHeight(),
@@ -146,7 +148,7 @@
                 }
                 else {
                     // center
-                    return base.$el.offset().top + ((base.$el.height() - base.$pointer.height()) / 2);
+                    return base.$el.center.top - base.$tipsy.offset().top - Math.abs(base.$pointer.outerHeight() / 2);
                 }
             })(),
             (function() {
@@ -173,7 +175,6 @@
 
             base.$pointer.css({top: pointer_position[0], left: pointer_position[1]});
             base.$pointer.addClass('pointer-' + base.$pointer.data('facing'));
-            base.$pointer.show();
         }
         else {
             base.$pointer.hide();
