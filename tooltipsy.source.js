@@ -43,7 +43,7 @@
     $.tooltipsy.prototype.init = function () {
         var base = this;
 
-        base.settings = $.extend({}, base.defaults, base.options);
+        base.settings = $.extend(true, {}, base.defaults, base.options);
         base.settings.delay = parseInt(base.settings.delay);
 
         if (typeof base.settings.content === 'function') {
