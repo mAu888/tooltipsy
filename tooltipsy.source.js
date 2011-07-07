@@ -288,31 +288,28 @@
 
     $.tooltipsy.prototype.readify = function () {
         var base = this;
+        
         this.ready = true;
-        if(this.settings.container.tipsy && this.settings.container.tip && this.settings.container.pointer) {
-          this.$tipsy = $(this.settings.container.tipsy);
-          this.$tip = $(this.settings.container.tip);
-          this.$pointer = $(this.settings.container.pointer);
+        
+        if(base.settings.container !== '') {
+          base.$tipsy = $(base.settings.container);
+          base.$tip = base.$tipsy.children(base.settings.classes.tip).first();
+          base.$pointer = base.$tipsy.children(base.settings.classes.pointer).first();
           
-          this.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
+          base.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
         }
         else {
-          this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483646;display:none">').appendTo('body');
-          this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title); 
-          this.$pointer = $('<div id="pointer' + this.random + '" style="position:absolute;" class="pointer">').appendTo(this.$tipsy);
+          base.$tipsy = $('<div id="tooltipsy' + base.random + '" class="' + base.settings.classes.tipsy + '" style="position:absolute;z-index:2147483646;display:none">').appendTo('body');
+          base.$tip = $('<div class="' + base.settings.classes.tip + '">').appendTo(base.$tipsy).html(base.settings.content != '' ? base.settings.content : base.title); 
+          base.$pointer = $('<div id="pointer' + base.random + '" style="position:absolute;" class="' + base.settings.classes.pointer + '">').appendTo(base.$tipsy);
         }
         
-        this.$tipsy.hover(function() {
-          base.$tipsy.css({zIndex: '2147483647'});
-        }, function() {
-          base.$tipsy.css({zIndex: '2147483646'});
-        });
-        
-        this.$tip.data('rootel', this.$el);
-        this.$tipsy.hover(function() {
+        base.$tipsy.hover(function() {
             window.clearTimeout(base.delayouttimer);
+            base.$tipsy.css({zIndex: '2147483647'});
         }, function() {
             base.$el.mouseleave();
+            base.$tipsy.css({zIndex: '2147483646'});
         });
     };
 
@@ -341,7 +338,7 @@
     $.tooltipsy.prototype.defaults = {
         alignTo: 'element',
         offset: [0, -1],
-        container: {},
+        container: '',
         content: '',
         show: function (e, $el) {
             $el.fadeIn(100);
@@ -350,12 +347,16 @@
             $el.fadeOut(100);
         },
         css: {},
-        className: 'tooltipsy',
+        classes: {
+            tipsy: 'tooltipsy',
+            tip: 'tip',
+            pointer: 'pointer'
+        },
         delay: 200,
         pointer: false
     };
 
-    $.fn.tooltipsy = function(options) {
+    $.fn.tooltipsy = function(options) {   
         return this.each(function() {
             new $.tooltipsy(this, options);
         });
