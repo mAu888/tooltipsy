@@ -1,4 +1,5 @@
 /* tooltipsy by Brian Cray
+ *   modified version by Maurício Hanika
  * Lincensed under GPL2 - http://www.gnu.org/licenses/gpl-2.0.html
  * Option quick reference:
  *  - alignTo: "element" or "cursor" (Defaults to "element")
@@ -29,6 +30,9 @@
         this.top = 0;
         this.right = 0;
         this.bottom = 0;
+        this.pos = [0, 0];
+        this.posXRel = '';
+        this.posYRel = '';
         this.delaytimer = null;
         this.delayouttimer = null;
 
@@ -106,7 +110,7 @@
         base.shown = true;
 
         if (base.settings.alignTo === 'cursor') {
-            var tip_position = [e.pageX + base.settings.offset[0], e.pageY + base.settings.offset[1]];
+            this.pos = [e.pageX + base.settings.offset[0], e.pageY + base.settings.offset[1]];
             if(tip_position[0] + base.width > $(window).width()) {
                 var tip_css = {top: tip_position[1] + 'px', right: tip_position[0] + 'px', left: 'auto'};
             }
@@ -115,13 +119,21 @@
             }
         }
         else {
-            var tip_position = [this.getPosX(), this.getPosY()];
+            this.pos = [this.getPosX(), this.getPosY()];
         }
         
-        base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
-        base.settings.show(e, base.$tipsy.stop(true, true));
+        /**
+         * The pointer position is calculated relative to the parent tooltip element
+         */
+        if(base.settings.pointer) {
+            base.$pointer.position(this.pos);
+        }
+        else {
+            base.$pointer.disable();
+        }
         
-
+        base.$tipsy.css({top: this.pos[1] + 'px', left: this.pos[0] + 'px'});
+        base.settings.show(e, base.$tipsy.stop(true, true));
     };
 
     $.tooltipsy.prototype.positions = function() {
@@ -160,12 +172,15 @@
         }
 
         if(pos < 0) {
+            this.posXRel = 'left';
             return this.$el.left - this.width + pos;
         }
         else if(pos === 0) {
+            this.posXRel = 'center';
             return this.$el.left - Math.abs((this.width - this.$el.width) / 2);
         }
         else {
+            this.posXRel = 'right';
             return this.$el.right + pos;
         }
     };
@@ -220,12 +235,15 @@
         }
 
         if(pos < 0) {
+            this.posYRel = 'top';
             return this.$el.top - this.height + pos;
         }
         else if(pos === 0) {
+            this.posYRel = 'center';
             return this.$el.top - ((this.height - this.$el.height) / 2);
         }
         else {
+            this.posYRel = 'bottom';
             return this.$el.bottom;
         }
     }
@@ -293,15 +311,17 @@
         
         if(base.settings.container !== '') {
             base.$tipsy = $(base.settings.container);
-            base.$tip = base.$tipsy.children(base.settings.classes.tip).first();
-            base.$pointer = base.$tipsy.children(base.settings.classes.pointer).first();
+            base.$tip = base.$tipsy.children('.' + base.settings.classes.tip).first();
+            base.$pointer = base.$tipsy.children('.' + base.settings.classes.pointer).first();
         }
         else {
             base.$tipsy = $('<div id="tooltipsy' + base.random + '" class="' + base.settings.classes.tipsy + '">').appendTo('body');
             base.$tip = $('<div class="' + base.settings.classes.tip + '">').appendTo(base.$tipsy).html(base.settings.content != '' ? base.settings.content : base.title); 
             base.$pointer = $('<div id="pointer' + base.random + '" style="position:absolute;" class="' + base.settings.classes.pointer + '">').appendTo(base.$tipsy);
         }
-          
+        
+        base.$pointer = new $.tooltipsy.pointer(base.$pointer, this);
+        
         base.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
         
         base.$tipsy.hover(function() {
@@ -338,6 +358,7 @@
     $.tooltipsy.prototype.defaults = {
         alignTo: 'element',
         offset: [0, -1],
+        pointerOffset: [0, 0],
         container: '',
         content: '',
         show: function (e, $el) {
@@ -362,4 +383,60 @@
         });
     };
 
+    /**
+     * Pointer
+     */
+    $.tooltipsy.pointer = function(el, tipsy) {
+        this.$el = $(el);
+        this.tipsy = tipsy;
+        
+        this.width = this.$el.outerWidth();
+        this.height = this.$el.outerHeight();
+    };
+    
+    $.tooltipsy.pointer.prototype.disable = function() {
+        this.$el.hide();
+    }
+    
+    $.tooltipsy.pointer.prototype.position = function(pos) {
+        var left = this.getPosX(pos[0]),
+            top = this.getPosY(pos[1]);
+        this.$el.css({
+            left: left + 'px',
+            top: top + 'px',
+            position: 'absolute'
+        });
+        
+        this.$el.show();
+    }
+    
+    $.tooltipsy.pointer.prototype.getPosX = function(pos) {
+        var offset = this.tipsy.settings.pointerOffset[0];
+        if(this.tipsy.posXRel == 'right') {
+            this.tipsy.pos[0] += this.width;
+            return -1 * (this.width + offset);
+        }
+        else if(this.tipsy.posXRel == 'center') {            
+            return (this.tipsy.width / 2) - (this.width / 2) + offset;
+        }
+        else {
+            this.tipsy.pos[0] -= this.width;
+            return this.tipsy.width + this.width + offset;
+        }
+    }
+    
+    $.tooltipsy.pointer.prototype.getPosY = function(pos) {
+        var offset = this.tipsy.settings.pointerOffset[1];
+        if(this.tipsy.posYRel == 'bottom') {
+            this.tipsy.pos[1] += this.height;
+            return -1 * (this.height + offset);
+        }
+        else if(this.tipsy.posYRel == 'center') {
+            return (this.tipsy.height / 2) - (this.height / 2) + offset;
+        }
+        else {
+            this.tipsy.pos[1] -= this.height;
+            return this.tipsy.height + offset;
+        }
+    }
 })(jQuery);
