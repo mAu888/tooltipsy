@@ -58,9 +58,11 @@
                 base.enter(e);
             }
         }).bind('mouseleave', function (e) {
+            // if tooltip lays over root element, dont respond to mouse leave
             if($(e.relatedTarget).parents().filter(base.$tipsy).length > 0) {
-              return false;
+                return false;
             }
+
             if(base.settings.delayOut > 0) {                
                 window.clearTimeout(base.delaytimer);
                 base.delaytimer = null;
@@ -95,21 +97,9 @@
             })(base.settings.css) > 0) {
                 base.$tip.css(base.settings.css);
             }
-            base.width = base.$tipsy.outerWidth();
-            base.height = base.$tipsy.outerHeight();
-            base.left = base.$tipsy.offset().left;
-            base.top = base.$tipsy.offset().top;
-            base.right = base.$tipsy.offset().left + base.width;
-            base.bottom = base.$tipsy.offset().top + base.height;
-            base.$el.center = {
-                top: (function() {
-                    return base.$el.offset().top + Math.abs(base.$el.outerHeight() / 2);
-                })(),
-                left: (function() {
-                    return base.$el.offset().left + Math.abs(base.$el.outerWidth() / 2);
-                })()
-            };
         }
+        
+        base.positions();
 
         base.shown = true;
 
@@ -123,12 +113,13 @@
             }
         }
         else {
-            var tip_position = [this.getPosX(base.$el[0]), this.getPosY(base.offset(base.$el[0]))];
+            var tip_position = [this.getPosX(), this.getPosY(base.offset(base.$el[0]))];
         }
         
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
         
+/*
         var overlaps = base.overlaps();
         if(base.settings.pointer && ! overlaps) {
             base.$pointer.show();
@@ -182,50 +173,92 @@
         else {
             base.$pointer.hide();
         }
+*/
+    };
+
+    $.tooltipsy.prototype.positions = function() {
+        var base = this;
+        base.width = base.$tipsy.outerWidth();
+        base.height = base.$tipsy.outerHeight();
+        base.left = base.$tipsy.offset().left;
+        base.top = base.$tipsy.offset().top;
+        base.right = base.$tipsy.offset().left + base.width;
+        base.bottom = base.$tipsy.offset().top + base.height;
+        
+        base.$el.width = base.$el.outerWidth();
+        base.$el.height = base.$el.outerHeight();
+        base.$el.left = base.$el.offset().left;
+        base.$el.top = base.$el.offset().top;
+        base.$el.right = base.$el.left + base.$el.width;
+        base.$el.bottom = base.$el.top + base.$el.height;
+        
+        base.$el.center = {
+            top: (function() {
+                return base.$el.offset().top + Math.abs(base.$el.outerHeight() / 2);
+            })(),
+            left: (function() {
+                return base.$el.offset().left + Math.abs(base.$el.outerWidth() / 2);
+            })()
+        };
     };
 
     $.tooltipsy.prototype.getPosX = function(pos) {
-        var tmpPos,
-            offset = this.$el.offset(),
-            pointer_width = (this.settings.pointer ? this.$pointer.outerWidth() : 0);
-        if (this.settings.offset[0] < 0) {
-            if(offset.left < this.$tipsy.outerWidth()) {
-                return Math.abs(this.settings.offset[0]) + offset.left + this.$el.width() + pointer_width;
-            }
-            else {
-                return offset.left - Math.abs(this.settings.offset[0]) - this.width - pointer_width;
-            }
+        var pos = this.settings.offset[0];
+        if(! this.checkPosX()) {
+            pos = this.getOptimizedPosX();
         }
-        else if (this.settings.offset[0] === 0) {
-            var viewport_width = $(window).width(),
-                tipsy_outer_width = this.$tipsy.outerWidth(),
-                tmpPos =  offset.left - ((this.width - this.$el.outerWidth()) / 2);
-            if((tmpPos + tipsy_outer_width) > viewport_width) {
-                tmpPos = viewport_width - tipsy_outer_width;
-            }
-            
-            return tmpPos < 0 ? 0 : tmpPos;
+
+        if(pos < 0) {
+            return this.$el.left - this.$tipsy.outerWidth() + pos;
+        }
+        else if(pos === 0) {
+            return this.$el.left - Math.abs((this.width - this.$el.width) / 2);
         }
         else {
-            if((offset.left + this.width) > $(window).width()) {
-                return offset.left - this.width - Math.abs(this.settings.offset[0]) - pointer_width;
-            }
-            else {
-                return offset.left + this.$el.outerWidth() + this.settings.offset[0] + pointer_width;
-            }
+            return this.$el.right + pos;
         }
     };
+
+    /**
+     * Check for valid x position
+     */
+    $.tooltipsy.prototype.checkPosX = function() {
+        if(this.settings.offset[0] < 0 && this.$el.left < this.width) {
+            return false;
+        }
+        else if(this.settings.offset[0] === 0 && (this.$el.left < this.width || $(window).width() < (this.$el.right + this.width))) {
+            return false;   
+        }
+        else if(this.settings.offset[0] > 0 && $(window).width() < (this.$el.right + this.width)) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
     
+    $.tooltipsy.prototype.getOptimizedPosX = function() {
+        var viewport_width = $(window).width();
+        if(this.width < this.$el.left || this.width < (viewport_width - this.$el.right)) {
+            var pos = (this.settings.offset[0] === 0 ? 1 : this.settings.offset[0]);
+            
+            if(this.$el.left > (viewport_width - this.$el.right)) {
+                return -1 * Math.abs(pos);
+            }
+            else {
+                return 1 * Math.abs(pos);
+            }   
+        }
+        else {
+            // find best position in window bounds
+        }
+    }
+
     $.tooltipsy.prototype.getPosY = function(pos) {
         var pointer_height = (this.settings.pointer ? this.$pointer.outerHeight() : 0);
         
         if (this.settings.offset[1] < 0) {
-            var viewport_height = $(window).height(),
-                tipsy_outer_height = this.$tipsy.outerHeight(),
-                tmpPos = pos.top - Math.abs(this.settings.offset[1]) - this.height;
-            if((tmpPos + tipsy_outer_height) > viewport_height) {
-                tmpPos = viewport_height - tipsy_outer_width;
-            }
+            var tmpPos = pos.top - Math.abs(this.settings.offset[1]) - this.height;
             return tmpPos < 0 ? 0 : tmpPos;
         }
         else if (this.settings.offset[1] === 0) {
@@ -241,6 +274,33 @@
             else {
                 return tipsy_top;
             }
+        }
+    }
+    
+    /**
+     * Check for valid y position
+     */
+    $.tooltipsy.prototype.checkPosY = function() {
+        if(this.settings.offset[1] < 0 && this.$el.top < this.height) {
+            return false;
+        }
+        else if(this.settings.offset[1] === 0 && (this.$el.top < this.height || $(window).height() < (this.$el.bottom + this.height))) {
+            return false;   
+        }
+        else if(this.settings.offset[1] > 0 && $(window).height() < (this.$el.bottom + this.height)) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
+    $.tooltipsy.prototype.getOptimizedPosY = function() {
+        if(this.$el.top > ($(window).height() - this.$el.bottom)) {
+            return -1 * Math.abs(this.settings.offset[1]);
+        }
+        else {
+            return 1 * Math.abs(this.settings.offset[1]);
         }
     }
 
