@@ -138,12 +138,15 @@
 
     $.tooltipsy.prototype.positions = function() {
         var base = this;
+        
+        base.$tipsy.show();
         base.width = base.$tipsy.outerWidth();
         base.height = base.$tipsy.outerHeight();
         base.left = base.$tipsy.offset().left;
         base.top = base.$tipsy.offset().top;
         base.right = base.$tipsy.offset().left + base.width;
         base.bottom = base.$tipsy.offset().top + base.height;
+        base.$tipsy.hide();
         
         base.$el.width = base.$el.outerWidth();
         base.$el.height = base.$el.outerHeight();
@@ -396,6 +399,8 @@
         this.height = this.$el.outerHeight();
         
         this.pos = ['center', 'center'];
+        
+        this.$el.css({ position: 'absolute' });
     };
     
     $.tooltipsy.pointer.prototype.disable = function() {
