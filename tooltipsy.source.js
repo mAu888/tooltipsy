@@ -292,17 +292,17 @@
         this.ready = true;
         
         if(base.settings.container !== '') {
-          base.$tipsy = $(base.settings.container);
-          base.$tip = base.$tipsy.children(base.settings.classes.tip).first();
-          base.$pointer = base.$tipsy.children(base.settings.classes.pointer).first();
-          
-          base.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
+            base.$tipsy = $(base.settings.container);
+            base.$tip = base.$tipsy.children(base.settings.classes.tip).first();
+            base.$pointer = base.$tipsy.children(base.settings.classes.pointer).first();
         }
         else {
-          base.$tipsy = $('<div id="tooltipsy' + base.random + '" class="' + base.settings.classes.tipsy + '" style="position:absolute;z-index:2147483646;display:none">').appendTo('body');
-          base.$tip = $('<div class="' + base.settings.classes.tip + '">').appendTo(base.$tipsy).html(base.settings.content != '' ? base.settings.content : base.title); 
-          base.$pointer = $('<div id="pointer' + base.random + '" style="position:absolute;" class="' + base.settings.classes.pointer + '">').appendTo(base.$tipsy);
+            base.$tipsy = $('<div id="tooltipsy' + base.random + '" class="' + base.settings.classes.tipsy + '">').appendTo('body');
+            base.$tip = $('<div class="' + base.settings.classes.tip + '">').appendTo(base.$tipsy).html(base.settings.content != '' ? base.settings.content : base.title); 
+            base.$pointer = $('<div id="pointer' + base.random + '" style="position:absolute;" class="' + base.settings.classes.pointer + '">').appendTo(base.$tipsy);
         }
+          
+        base.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
         
         base.$tipsy.hover(function() {
             window.clearTimeout(base.delayouttimer);
