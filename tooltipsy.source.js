@@ -13,6 +13,8 @@
  */
  
 (function($){
+    "use strict";
+    
     $.tooltipsy = function (el, options) {
         this.options = options;
         this.$el = $(el);
@@ -58,9 +60,11 @@
                 base.enter(e);
             }
         }).bind('mouseleave', function (e) {
+            // if tooltip lays over root element, dont respond to mouse leave
             if($(e.relatedTarget).parents().filter(base.$tipsy).length > 0) {
-              return false;
+                return false;
             }
+
             if(base.settings.delayOut > 0) {                
                 window.clearTimeout(base.delaytimer);
                 base.delaytimer = null;
@@ -95,21 +99,9 @@
             })(base.settings.css) > 0) {
                 base.$tip.css(base.settings.css);
             }
-            base.width = base.$tipsy.outerWidth();
-            base.height = base.$tipsy.outerHeight();
-            base.left = base.$tipsy.offset().left;
-            base.top = base.$tipsy.offset().top;
-            base.right = base.$tipsy.offset().left + base.width;
-            base.bottom = base.$tipsy.offset().top + base.height;
-            base.$el.center = {
-                top: (function() {
-                    return base.$el.offset().top + Math.abs(base.$el.outerHeight() / 2);
-                })(),
-                left: (function() {
-                    return base.$el.offset().left + Math.abs(base.$el.outerWidth() / 2);
-                })()
-            };
         }
+        
+        base.positions();
 
         base.shown = true;
 
@@ -123,124 +115,158 @@
             }
         }
         else {
-            var tip_position = [this.getPosX(base.$el[0]), this.getPosY(base.offset(base.$el[0]))];
+            var tip_position = [this.getPosX(), this.getPosY()];
         }
         
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
         
-        var overlaps = base.overlaps();
-        if(base.settings.pointer && ! overlaps) {
-            base.$pointer.show();
-        
-            var pointer_position = [(function() {
-                var tipsy_top = base.$tipsy.offset().top,
-                    tipsy_bottom = base.$tipsy.offset().top + base.$tipsy.outerHeight(),
-                    el_top = base.$el.offset().top,
-                    el_bottom = base.$el.offset().top + base.$el.outerHeight();
 
-                if(tipsy_bottom - base.$pointer.outerHeight() < el_top) {
-                    // bottom
-                    base.$pointer.data('facing', 's');
-                    return tipsy_bottom;
-                }
-                else if(tipsy_top + base.$pointer.outerHeight() > el_bottom) {
-                    // top
-                    base.$pointer.data('facing', 'n');
-                    return -1 * base.$pointer.outerHeight() + 1;
-                }
-                else {
-                    // center
-                    return base.$el.center.top - base.$tipsy.offset().top - Math.abs(base.$pointer.outerHeight() / 2);
-                }
+    };
+
+    $.tooltipsy.prototype.positions = function() {
+        var base = this;
+        base.width = base.$tipsy.outerWidth();
+        base.height = base.$tipsy.outerHeight();
+        base.left = base.$tipsy.offset().left;
+        base.top = base.$tipsy.offset().top;
+        base.right = base.$tipsy.offset().left + base.width;
+        base.bottom = base.$tipsy.offset().top + base.height;
+        
+        base.$el.width = base.$el.outerWidth();
+        base.$el.height = base.$el.outerHeight();
+        base.$el.left = base.$el.offset().left;
+        base.$el.top = base.$el.offset().top;
+        base.$el.right = base.$el.left + base.$el.width;
+        base.$el.bottom = base.$el.top + base.$el.height;
+        
+        base.$el.center = {
+            top: (function() {
+                return base.$el.offset().top + Math.abs(base.$el.outerHeight() / 2);
             })(),
-            (function() {
-                var tipsy_left = base.$tipsy.offset().left,
-                    tipsy_right = base.$tipsy.offset().left + base.$tipsy.outerWidth(),
-                    el_left = base.$el.offset().left,
-                    el_right = base.$el.offset().left + base.$el.outerWidth(),
-                    pointer_facing = base.$pointer.data('facing') ? base.$pointer.data('facing') : '';
-
-                if(tipsy_left - base.$pointer.outerWidth() > el_right) {
-                    // left
-                    base.$pointer.data('facing', pointer_facing + 'w');
-                    return -1 * base.$pointer.outerWidth();
-                }
-                else if(tipsy_right + base.$pointer.outerWidth() < el_left) {
-                    // right
-                    base.$pointer.data('facing', pointer_facing + 'e');
-                    return base.$tipsy.outerWidth();
-                }
-                else {
-                    return (base.$el.offset().left - base.$tipsy.offset().left) + ((base.$el.width() - base.$pointer.width()) / 2);
-                }
-            })()];
-
-            base.$pointer.css({top: pointer_position[0], left: pointer_position[1]});
-            base.$pointer.addClass('pointer-' + base.$pointer.data('facing'));
-        }
-        else {
-            base.$pointer.hide();
-        }
+            left: (function() {
+                return base.$el.offset().left + Math.abs(base.$el.outerWidth() / 2);
+            })()
+        };
     };
 
+    /**
+     * Retrieve optimized x position for tooltip
+     **/
     $.tooltipsy.prototype.getPosX = function(pos) {
-        var tmpPos,
-            offset = this.$el.offset(),
-            pointer_width = (this.settings.pointer ? this.$pointer.outerWidth() : 0);
-        if (this.settings.offset[0] < 0) {
-            if(offset.left < this.$tipsy.outerWidth()) {
-                return Math.abs(this.settings.offset[0]) + offset.left + this.$el.width() + pointer_width;
-            }
-            else {
-                return offset.left - Math.abs(this.settings.offset[0]) - this.width - pointer_width;
-            }
+        var pos = this.settings.offset[0];
+        if(! this.checkPosX()) {
+            pos = this.getOptimizedPosX();
         }
-        else if (this.settings.offset[0] === 0) {
-            var viewport_width = $(window).width(),
-                tipsy_outer_width = this.$tipsy.outerWidth(),
-                tmpPos =  offset.left - ((this.width - this.$el.outerWidth()) / 2);
-            if((tmpPos + tipsy_outer_width) > viewport_width) {
-                tmpPos = viewport_width - tipsy_outer_width;
-            }
-            
-            return tmpPos < 0 ? 0 : tmpPos;
+
+        if(pos < 0) {
+            return this.$el.left - this.width + pos;
+        }
+        else if(pos === 0) {
+            return this.$el.left - Math.abs((this.width - this.$el.width) / 2);
         }
         else {
-            if((offset.left + this.width) > $(window).width()) {
-                return offset.left - this.width - Math.abs(this.settings.offset[0]) - pointer_width;
-            }
-            else {
-                return offset.left + this.$el.outerWidth() + this.settings.offset[0] + pointer_width;
-            }
+            return this.$el.right + pos;
         }
     };
-    
-    $.tooltipsy.prototype.getPosY = function(pos) {
-        var pointer_height = (this.settings.pointer ? this.$pointer.outerHeight() : 0);
-        
-        if (this.settings.offset[1] < 0) {
-            var viewport_height = $(window).height(),
-                tipsy_outer_height = this.$tipsy.outerHeight(),
-                tmpPos = pos.top - Math.abs(this.settings.offset[1]) - this.height;
-            if((tmpPos + tipsy_outer_height) > viewport_height) {
-                tmpPos = viewport_height - tipsy_outer_width;
-            }
-            return tmpPos < 0 ? 0 : tmpPos;
+
+    /**
+     * Check for valid x position
+     */
+    $.tooltipsy.prototype.checkPosX = function() {
+        var pos = this.settings.offset[0],
+            viewport_width = $(document).scrollLeft() + $(window).width();
+        if(pos < 0 && this.$el.left < this.width) {
+            return false;
         }
-        else if (this.settings.offset[1] === 0) {
-            var tmpPos = pos.top - ((this.height - this.$el.outerHeight()) / 2);
-            return tmpPos < 0 ? 0 : tmpPos;
+        else if(pos === 0 && (this.$el.left < (this.width / 2) || viewport_width < (this.$el.center.left + (this.width/ 2)))) {
+            return false;   
+        }
+        else if(pos > 0 && viewport_width < (this.$el.right + this.width)) {
+            return false;
         }
         else {
-            var tipsy_top = pos.top + this.$el.outerHeight() + this.settings.offset[1] + pointer_height,
-                tipsy_bottom = tipsy_top + this.$tipsy.outerHeight();
-            if(tipsy_bottom > $(window).height()) {
-                return pos.top - this.$tipsy.outerHeight() - this.$pointer.outerHeight();
+            return true;
+        }
+    }
+    
+    /**
+     * Calculate optimized x position
+     */
+    $.tooltipsy.prototype.getOptimizedPosX = function() {
+        var viewport_width = $(document).scrollLeft() + $(window).width();
+        if(this.width < this.$el.left || this.width < (viewport_width - this.$el.right)) {
+            var pos = (this.settings.offset[0] === 0 ? 1 : this.settings.offset[0]);
+            
+            if(this.$el.left > (viewport_width - this.$el.right)) {
+                return -1 * Math.abs(pos);
             }
             else {
-                return tipsy_top;
+                return 1 * Math.abs(pos);
+            }   
+        }
+        else {
+            throw 'larger tooltip width than viewport not yet implemented';
+        }
+    }
+    
+    /**
+     * Retrieve optimized y position
+     */
+    $.tooltipsy.prototype.getPosY = function() {
+        var pos = this.settings.offset[1];
+        if(! this.checkPosY()) {
+            pos = this.getOptimizedPosY();
+        }
+
+        if(pos < 0) {
+            return this.$el.top - this.height + pos;
+        }
+        else if(pos === 0) {
+            return this.$el.top - ((this.height - this.$el.height) / 2);
+        }
+        else {
+            return this.$el.bottom;
+        }
+    }
+    
+    /**
+     * Check for valid y position
+     */
+    $.tooltipsy.prototype.checkPosY = function() {
+        var pos = this.settings.offset[1],
+            viewport_height = $(document).scrollTop() + $(window).height();
+        if(pos < 0 && this.$el.top < this.height) {
+            return false;
+        }
+        else if(pos === 0 && (this.$el.center.top < (this.height / 2) || viewport_height < (this.$el.bottom + (this.height / 2)))) {
+            return false;   
+        }
+        else if(pos > 0 && viewport_height < (this.$el.bottom + this.height)) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
+    /**
+     * Calculate optimized y position
+     */ 
+    $.tooltipsy.prototype.getOptimizedPosY = function() {
+        var viewport_height = $(document).scrollTop() + $(window).height();
+        if(this.height < this.$el.top || this.height < (viewport_height - this.$el.bottom)) {
+            var pos = (this.settings.offset[1] === 0 ? 1 : this.settings.offset[1]);        
+            if(this.$el.top > (viewport_height - this.$el.bottom)) {
+                return -1 * Math.abs(pos);
             }
+            else {
+                return 1 * Math.abs(pos);
+            }
+        }
+        else {
+            // get best y fit for tooltip
+            throw 'larger tooltip height than viewport not yet implemented';
         }
     }
 
@@ -262,31 +288,28 @@
 
     $.tooltipsy.prototype.readify = function () {
         var base = this;
+        
         this.ready = true;
-        if(this.settings.container.tipsy && this.settings.container.tip && this.settings.container.pointer) {
-          this.$tipsy = $(this.settings.container.tipsy);
-          this.$tip = $(this.settings.container.tip);
-          this.$pointer = $(this.settings.container.pointer);
-          
-          this.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
+        
+        if(base.settings.container !== '') {
+            base.$tipsy = $(base.settings.container);
+            base.$tip = base.$tipsy.children(base.settings.classes.tip).first();
+            base.$pointer = base.$tipsy.children(base.settings.classes.pointer).first();
         }
         else {
-          this.$tipsy = $('<div id="tooltipsy' + this.random + '" style="position:absolute;z-index:2147483646;display:none">').appendTo('body');
-          this.$tip = $('<div class="' + this.settings.className + '">').appendTo(this.$tipsy).html(this.settings.content != '' ? this.settings.content : this.title); 
-          this.$pointer = $('<div id="pointer' + this.random + '" style="position:absolute;" class="pointer">').appendTo(this.$tipsy);
+            base.$tipsy = $('<div id="tooltipsy' + base.random + '" class="' + base.settings.classes.tipsy + '">').appendTo('body');
+            base.$tip = $('<div class="' + base.settings.classes.tip + '">').appendTo(base.$tipsy).html(base.settings.content != '' ? base.settings.content : base.title); 
+            base.$pointer = $('<div id="pointer' + base.random + '" style="position:absolute;" class="' + base.settings.classes.pointer + '">').appendTo(base.$tipsy);
         }
+          
+        base.$tipsy.css({display: 'none', position: 'absolute', zIndex: '2147483646'});
         
-        this.$tipsy.hover(function() {
-          base.$tipsy.css({zIndex: '2147483647'});
-        }, function() {
-          base.$tipsy.css({zIndex: '2147483646'});
-        });
-        
-        this.$tip.data('rootel', this.$el);
-        this.$tipsy.hover(function() {
+        base.$tipsy.hover(function() {
             window.clearTimeout(base.delayouttimer);
+            base.$tipsy.css({zIndex: '2147483647'});
         }, function() {
             base.$el.mouseleave();
+            base.$tipsy.css({zIndex: '2147483646'});
         });
     };
 
@@ -315,7 +338,7 @@
     $.tooltipsy.prototype.defaults = {
         alignTo: 'element',
         offset: [0, -1],
-        container: {},
+        container: '',
         content: '',
         show: function (e, $el) {
             $el.fadeIn(100);
@@ -324,12 +347,16 @@
             $el.fadeOut(100);
         },
         css: {},
-        className: 'tooltipsy',
+        classes: {
+            tipsy: 'tooltipsy',
+            tip: 'tip',
+            pointer: 'pointer'
+        },
         delay: 200,
         pointer: false
     };
 
-    $.fn.tooltipsy = function(options) {
+    $.fn.tooltipsy = function(options) {   
         return this.each(function() {
             new $.tooltipsy(this, options);
         });
