@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8">
+    <style type="text/css">
+    <!--
+      body {
+        font: normal 14px/18px helvetica, arial, sans-serif;
+        margin: 0 auto;
+        width: 60%;
+      }
+      
+      h1 {
+        font: 100 28px/24px georgia, 'times new', sans-serif;
+      }
+      
+      p {
+        margin-bottom: 40px;
+      }
+      
+      span {
+        border-bottom: 1px dotted #666;
+        cursor: pointer;
+      }
+      
+      code {
+        background-color: rgba(0, 0, 0, .9);
+        color: #fff;
+        display: block;
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
+        -o-border-radius: 5px;
+        -khtml-border-radius: 5px;
+        border-radius: 5px;
+        margin-top: 10px;
+        padding: 10px;
+        white-space: pre;
+      }
+      
+      /**
+       * TOOLTIPS
+       **/
+      
+      .tipsy-tooltip-basic {
+        background-color: rgba(0, 0, 0, .9);
+        color: #fff;
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
+        -o-border-radius: 5px;
+        -khtml-border-radius: 5px;
+        border-radius: 5px;
+        padding: 5px;
+      }
+      
+      .tipsy-tooltip-custom-el {
+        background-color: #fff;
+        
+        border: 1px solid #3d4144;
+        /*-webkit-border-image: url('border.png') 1 1 1 1 repeat;*/
+        
+        color: #000;
+        
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
+        -o-border-radius: 5px;
+        -khtml-border-radius: 5px;
+        border-radius: 5px;
+      }
+      
+      .tipsy-tooltip-custom-el header, .tipsy-tooltip-custom-el footer {
+        display: block;
+        
+        background: -webkit-gradient(linear, center top, center bottom, color-stop(0, #3a4d62), color-stop(1.0, #2a3846));
+
+        height: 25px;
+        
+        padding: 0 8px;
+      }
+      
+      .tipsy-tooltip-custom-el header {
+        -webkit-box-shadow: inset 0 1px 0px rgba(255, 255, 255, .33);
+        -webkit-border-top-left-radius: 5px;
+        -webkit-border-top-right-radius: 5px;
+      }
+      
+      .tipsy-tooltip-custom-el footer {        
+        -webkit-box-shadow: inset 0 1px 0px rgba(255, 255, 255, .33);
+        -webkit-border-bottom-left-radius: 3px;
+        -webkit-border-bottom-right-radius: 3px;
+      }
+      
+      .ui-header-button {
+        color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        font-family: Helvetica, arial, sans-serif;
+        font-size: 9px;
+        height: 15px;
+        line-height: 15px;
+        margin: 5px 0 4px;
+        padding: 0 4px;
+        -webkit-border-radius: 5px;
+        
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+      }
+      
+      .ui-header-button:hover {
+        background-color: rgba(0, 0, 0, .25);
+      }
+      
+      .ui-header-button:active {
+        background: -webkit-gradient(linear, center top, center bottom, color-stop(0, #2a2f37), color-stop(1.0, #070c14));
+        -webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, .4),
+                            0 1px 0 rgba(255, 255, 255, .4);
+      }
+      
+      .ribbon {
+        background: -webkit-gradient(linear, center top, center bottom, color-stop(0, #d5dce0), color-stop(.9, #d5dce0), color-stop(1.0, #cfd6d9));
+        -webkit-box-shadow: inset 0 1px 0 #fff;
+        min-height: 28px;
+      }
+      
+      .ui-ribbon-button {
+        color: #444d56;
+        cursor: pointer;
+        display: inline-block;
+        font-family: Helvetica, arial, sans-serif;
+        font-size: 11px;
+        height: 15px;
+        line-height: 15px;
+        margin: 5px 0 4px;
+        padding: 0 4px;
+        -webkit-border-radius: 5px;
+        
+        text-shadow: 0 1px 0 #fff,
+                     0 -1px 0 rgba(0, 0, 0, 0);
+        
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+      }
+      
+      .ui-ribbon-button:hover {
+        background-color: #b2bcc3;
+        color: #333;
+        text-shadow: none;
+        -webkit-border-radius: 20px;
+      }
+      
+      .ui-ribbon-button:active {
+        height: 16px;
+        -webkit-box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .75),
+                            inset 0 1px 0 rgba(0, 0, 0, .1);
+      }
+      
+      .tip-left {
+        border-right: 1px solid #d8d8d8;
+        -webkit-box-shadow:1px 0 0 #f2f4f5;
+        width: 100px;
+      }
+      
+      .tip-left p {
+        margin: 0;
+        padding: 8px 4px;
+      }
+      
+      .pointer-tooltip-custom-el {
+        width: 10px;
+        height: 7px;
+      }
+      
+      .pointer-tooltip-custom-el { background: url('images/pointer.png') no-repeat; margin-top: 1px; }
+      .pointer-tooltip-custom-el-posy-bottom { background-image: url('images/pointer-bottom.png'); margin-top: -2px;}      
+      .pointer-tooltip-custom-el-posx-left { background-image: url('images/pointer-left.png'); margin-left: -1px; }      
+      .pointer-tooltip-custom-el-posx-right { background-image: url('images/pointer-right.png'); margin-left: -1px; }      
+      
+      #tipsy { display: none; }
+    -->
+    </style>
+  </head>
+  <body>
+    <h1>Naked tooltip</h1>
+    <p>
+        Try out this very basic unstyled <span id="tooltip-naked" title="Hello there.">tooltip</span>.
+        <code>$('#tooltip-naked').tooltipsy();</code>
+    </p>
+    <h1>Basic Tooltip</h1>
+    <p>
+        Added some color and styling to <span id="tooltip-basic" title="Uh, not naked anymore?">this tooltip</span>.
+        <code>$('#tooltip-basic').tooltipsy({
+  classes: {
+    tipsy: 'tipsy-tooltip-basic',
+    tip: 'tip-tooltip-basic',
+    pointer: 'pointer-tooltip-basic'
+  }
+});</code>
+    </p>
+    <h1>Basic Tooltip to the left</h1>
+    <p>
+        Yeah, you may position it where ever you want. In this case I choose <span id="tooltip-basic-left" title="Yep, you see me to the left">left</span>.
+        <code>$('#tooltip-basic-left').tooltipsy({
+  classes: {
+    tipsy: 'tipsy-tooltip-basic',
+    tip: 'tip-tooltip-basic',
+    pointer: 'pointer-tooltip-basic'
+  },
+  offset: [-1, 0]
+});</code>
+    </p>
+    <h1>Basic Tooltip to the right</h1>
+    <p>
+        So, let's try the <span id="tooltip-basic-right" title="Yep, you see me to the right">right</span> side.
+        <code>$('#tooltip-basic-right').tooltipsy({
+  classes: {
+    tipsy: 'tipsy-tooltip-basic',
+    tip: 'tip-tooltip-basic',
+    pointer: 'pointer-tooltip-basic'
+  },
+  offset: [1, 0]
+});</code>
+    </p>
+    <h1>Very custom styled tooltip</h1>
+    <p>        
+        <div id="tipsy" class="tipsy-tooltip-custom-el">
+          <div class="pointer-tooltip-custom-el"></div>
+          <header>
+            <div class="ui-header-button">Verknüpfungen</div>
+            <div class="ui-header-button">Weiteres</div>
+          </header>
+          <div class="ribbon">
+            <div class="ui-ribbon-button">Allgemeines</div>
+            <div class="ui-ribbon-button">Weiteres</div>
+          </div>
+          <div class="tip-tooltip-custom-el">
+            <div class="tip-left">
+              <p>Foo bar</p>
+            </div>
+            <div class="tip-right"></div>
+          </div>
+          <footer></footer>
+        </div>
+        You may take any html element as tooltipsys base element. Check <span id="tooltip-custom-el">this</span> out. For the sake of usuability you may change the delay out value to e.g. 1000.
+        <code>$('#tooltip-custom-el').tooltipsy({
+    offset: [0, 1],
+    pointer: true,
+    container: '#tipsy',
+    classes: {
+        tipsy: 'tipsy-tooltip-custom-el',
+        tip: 'tip-tooltip-custom-el',
+        pointer: 'pointer-tooltip-custom-el'
+    },
+    delayOut: 1000
+});</code>    
+    
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="https://raw.github.com/mAu888/tooltipsy/master/tooltipsy.min.js"></script>
+    <script type="text/javascript">
+    <!--
+      $('#tooltip-naked').tooltipsy();
+      
+      $('#tooltip-basic').tooltipsy({
+        classes: {
+          tipsy: 'tipsy-tooltip-basic',
+          tip: 'tip-tooltip-basic',
+          pointer: 'pointer-tooltip-basic'
+        }
+      });
+      
+      $('#tooltip-basic-left').tooltipsy({
+        classes: {
+          tipsy: 'tipsy-tooltip-basic',
+          tip: 'tip-tooltip-basic',
+          pointer: 'pointer-tooltip-basic'
+        },
+        offset: [-1, 0]
+      });
+      
+      $('#tooltip-basic-right').tooltipsy({
+        classes: {
+          tipsy: 'tipsy-tooltip-basic',
+          tip: 'tip-tooltip-basic',
+          pointer: 'pointer-tooltip-basic'
+        },
+        offset: [1, 0]
+      });
+
+      $('#tooltip-custom-el').tooltipsy({
+          offset: [0, 1],
+          pointer: true,
+          container: '#tipsy',
+          classes: {
+              tipsy: 'tipsy-tooltip-custom-el',
+              tip: 'tip-tooltip-custom-el',
+              pointer: 'pointer-tooltip-custom-el'
+          },
+          delayOut: 1000
+      });
+    -->
+    </script>
+  </body>
+</html>
