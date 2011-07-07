@@ -190,11 +190,12 @@
      */
     $.tooltipsy.prototype.checkPosX = function() {
         var pos = this.settings.offset[0],
-            viewport_width = $(document).scrollLeft() + $(window).width();
-        if(pos < 0 && this.$el.left < this.width) {
+            scroll_left = $(document).scrollLeft(),
+            viewport_width = scroll_left + $(window).width();
+        if(pos < 0 && (this.$el.left - scroll_left) < this.width) {
             return false;
         }
-        else if(pos === 0 && (this.$el.left < (this.width / 2) || viewport_width < (this.$el.center.left + (this.width/ 2)))) {
+        else if(pos === 0 && ((this.$el.left - scroll_left) < (this.width / 2) || viewport_width < (this.$el.center.left + (this.width/ 2)))) {
             return false;   
         }
         else if(pos > 0 && viewport_width < (this.$el.right + this.width)) {
@@ -209,11 +210,12 @@
      * Calculate optimized x position
      */
     $.tooltipsy.prototype.getOptimizedPosX = function() {
-        var viewport_width = $(document).scrollLeft() + $(window).width();
+        var scroll_left = $(document).scrollLeft(),
+            viewport_width = scroll_left + $(window).width();
         if(this.width < this.$el.left || this.width < (viewport_width - this.$el.right)) {
             var pos = (this.settings.offset[0] === 0 ? 1 : this.settings.offset[0]);
             
-            if(this.$el.left > (viewport_width - this.$el.right)) {
+            if((this.$el.left - scroll_left) > (viewport_width - this.$el.right)) {
                 return -1 * Math.abs(pos);
             }
             else {
@@ -392,6 +394,8 @@
         
         this.width = this.$el.outerWidth();
         this.height = this.$el.outerHeight();
+        
+        this.pos = ['center', 'center'];
     };
     
     $.tooltipsy.pointer.prototype.disable = function() {
@@ -400,12 +404,17 @@
     
     $.tooltipsy.pointer.prototype.position = function(pos) {
         var left = this.getPosX(pos[0]),
-            top = this.getPosY(pos[1]);
+            top = this.getPosY(pos[1]),
+            klass = this.tipsy.settings.classes.pointer;
         this.$el.css({
             left: left + 'px',
             top: top + 'px',
             position: 'absolute'
         });
+        
+        this.$el.removeClass(klass + '-posy-top ' + klass + '-posy-center ' + klass + '-posy-bottom ' + klass + '-posx-left ' + klass + '-posx-center ' + klass + '-posx-right');
+        this.$el.addClass(klass + '-posx-' + this.pos[0]);
+        this.$el.addClass(klass + '-posy-' + this.pos[1]);
         
         this.$el.show();
     }
@@ -413,29 +422,35 @@
     $.tooltipsy.pointer.prototype.getPosX = function(pos) {
         var offset = this.tipsy.settings.pointerOffset[0];
         if(this.tipsy.posXRel == 'right') {
-            this.tipsy.pos[0] += this.width;
+            this.tipsy.pos[0] += this.width + offset;
+            this.pos[0] = 'left';
             return -1 * (this.width + offset);
         }
-        else if(this.tipsy.posXRel == 'center') {            
+        else if(this.tipsy.posXRel == 'center') {
+            this.pos[0] = 'center';      
             return (this.tipsy.width / 2) - (this.width / 2) + offset;
         }
         else {
-            this.tipsy.pos[0] -= this.width;
-            return this.tipsy.width + this.width + offset;
+            this.tipsy.pos[0] -= (this.width + offset);
+            this.pos[0] = 'right';
+            return this.tipsy.width + offset;
         }
     }
     
     $.tooltipsy.pointer.prototype.getPosY = function(pos) {
         var offset = this.tipsy.settings.pointerOffset[1];
         if(this.tipsy.posYRel == 'bottom') {
-            this.tipsy.pos[1] += this.height;
+            this.tipsy.pos[1] += this.height + offset;
+            this.pos[1] = 'top';
             return -1 * (this.height + offset);
         }
         else if(this.tipsy.posYRel == 'center') {
+            this.pos[1] = 'center';
             return (this.tipsy.height / 2) - (this.height / 2) + offset;
         }
         else {
-            this.tipsy.pos[1] -= this.height;
+            this.tipsy.pos[1] -= (this.height + offset);
+            this.pos[1] = 'bottom';
             return this.tipsy.height + offset;
         }
     }
