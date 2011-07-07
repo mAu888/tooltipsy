@@ -13,6 +13,8 @@
  */
  
 (function($){
+    "use strict";
+    
     $.tooltipsy = function (el, options) {
         this.options = options;
         this.$el = $(el);
@@ -113,67 +115,13 @@
             }
         }
         else {
-            var tip_position = [this.getPosX(), this.getPosY(base.offset(base.$el[0]))];
+            var tip_position = [this.getPosX(), this.getPosY()];
         }
         
         base.$tipsy.css({top: tip_position[1] + 'px', left: tip_position[0] + 'px'});
         base.settings.show(e, base.$tipsy.stop(true, true));
         
-/*
-        var overlaps = base.overlaps();
-        if(base.settings.pointer && ! overlaps) {
-            base.$pointer.show();
-        
-            var pointer_position = [(function() {
-                var tipsy_top = base.$tipsy.offset().top,
-                    tipsy_bottom = base.$tipsy.offset().top + base.$tipsy.outerHeight(),
-                    el_top = base.$el.offset().top,
-                    el_bottom = base.$el.offset().top + base.$el.outerHeight();
 
-                if(tipsy_bottom - base.$pointer.outerHeight() < el_top) {
-                    // bottom
-                    base.$pointer.data('facing', 's');
-                    return tipsy_bottom;
-                }
-                else if(tipsy_top + base.$pointer.outerHeight() > el_bottom) {
-                    // top
-                    base.$pointer.data('facing', 'n');
-                    return -1 * base.$pointer.outerHeight() + 1;
-                }
-                else {
-                    // center
-                    return base.$el.center.top - base.$tipsy.offset().top - Math.abs(base.$pointer.outerHeight() / 2);
-                }
-            })(),
-            (function() {
-                var tipsy_left = base.$tipsy.offset().left,
-                    tipsy_right = base.$tipsy.offset().left + base.$tipsy.outerWidth(),
-                    el_left = base.$el.offset().left,
-                    el_right = base.$el.offset().left + base.$el.outerWidth(),
-                    pointer_facing = base.$pointer.data('facing') ? base.$pointer.data('facing') : '';
-
-                if(tipsy_left - base.$pointer.outerWidth() > el_right) {
-                    // left
-                    base.$pointer.data('facing', pointer_facing + 'w');
-                    return -1 * base.$pointer.outerWidth();
-                }
-                else if(tipsy_right + base.$pointer.outerWidth() < el_left) {
-                    // right
-                    base.$pointer.data('facing', pointer_facing + 'e');
-                    return base.$tipsy.outerWidth();
-                }
-                else {
-                    return (base.$el.offset().left - base.$tipsy.offset().left) + ((base.$el.width() - base.$pointer.width()) / 2);
-                }
-            })()];
-
-            base.$pointer.css({top: pointer_position[0], left: pointer_position[1]});
-            base.$pointer.addClass('pointer-' + base.$pointer.data('facing'));
-        }
-        else {
-            base.$pointer.hide();
-        }
-*/
     };
 
     $.tooltipsy.prototype.positions = function() {
@@ -202,6 +150,9 @@
         };
     };
 
+    /**
+     * Retrieve optimized x position for tooltip
+     **/
     $.tooltipsy.prototype.getPosX = function(pos) {
         var pos = this.settings.offset[0];
         if(! this.checkPosX()) {
@@ -209,7 +160,7 @@
         }
 
         if(pos < 0) {
-            return this.$el.left - this.$tipsy.outerWidth() + pos;
+            return this.$el.left - this.width + pos;
         }
         else if(pos === 0) {
             return this.$el.left - Math.abs((this.width - this.$el.width) / 2);
@@ -223,13 +174,15 @@
      * Check for valid x position
      */
     $.tooltipsy.prototype.checkPosX = function() {
-        if(this.settings.offset[0] < 0 && this.$el.left < this.width) {
+        var pos = this.settings.offset[0],
+            viewport_width = $(document).scrollLeft() + $(window).width();
+        if(pos < 0 && this.$el.left < this.width) {
             return false;
         }
-        else if(this.settings.offset[0] === 0 && (this.$el.left < this.width || $(window).width() < (this.$el.right + this.width))) {
+        else if(pos === 0 && (this.$el.left < (this.width / 2) || viewport_width < (this.$el.center.left + (this.width/ 2)))) {
             return false;   
         }
-        else if(this.settings.offset[0] > 0 && $(window).width() < (this.$el.right + this.width)) {
+        else if(pos > 0 && viewport_width < (this.$el.right + this.width)) {
             return false;
         }
         else {
@@ -237,8 +190,11 @@
         }
     }
     
+    /**
+     * Calculate optimized x position
+     */
     $.tooltipsy.prototype.getOptimizedPosX = function() {
-        var viewport_width = $(window).width();
+        var viewport_width = $(document).scrollLeft() + $(window).width();
         if(this.width < this.$el.left || this.width < (viewport_width - this.$el.right)) {
             var pos = (this.settings.offset[0] === 0 ? 1 : this.settings.offset[0]);
             
@@ -250,30 +206,27 @@
             }   
         }
         else {
-            // find best position in window bounds
+            throw 'larger tooltip width than viewport not yet implemented';
         }
     }
-
-    $.tooltipsy.prototype.getPosY = function(pos) {
-        var pointer_height = (this.settings.pointer ? this.$pointer.outerHeight() : 0);
-        
-        if (this.settings.offset[1] < 0) {
-            var tmpPos = pos.top - Math.abs(this.settings.offset[1]) - this.height;
-            return tmpPos < 0 ? 0 : tmpPos;
+    
+    /**
+     * Retrieve optimized y position
+     */
+    $.tooltipsy.prototype.getPosY = function() {
+        var pos = this.settings.offset[1];
+        if(! this.checkPosY()) {
+            pos = this.getOptimizedPosY();
         }
-        else if (this.settings.offset[1] === 0) {
-            var tmpPos = pos.top - ((this.height - this.$el.outerHeight()) / 2);
-            return tmpPos < 0 ? 0 : tmpPos;
+
+        if(pos < 0) {
+            return this.$el.top - this.height + pos;
+        }
+        else if(pos === 0) {
+            return this.$el.top - ((this.height - this.$el.height) / 2);
         }
         else {
-            var tipsy_top = pos.top + this.$el.outerHeight() + this.settings.offset[1] + pointer_height,
-                tipsy_bottom = tipsy_top + this.$tipsy.outerHeight();
-            if(tipsy_bottom > $(window).height()) {
-                return pos.top - this.$tipsy.outerHeight() - this.$pointer.outerHeight();
-            }
-            else {
-                return tipsy_top;
-            }
+            return this.$el.bottom;
         }
     }
     
@@ -281,13 +234,15 @@
      * Check for valid y position
      */
     $.tooltipsy.prototype.checkPosY = function() {
-        if(this.settings.offset[1] < 0 && this.$el.top < this.height) {
+        var pos = this.settings.offset[1],
+            viewport_height = $(document).scrollTop() + $(window).height();
+        if(pos < 0 && this.$el.top < this.height) {
             return false;
         }
-        else if(this.settings.offset[1] === 0 && (this.$el.top < this.height || $(window).height() < (this.$el.bottom + this.height))) {
+        else if(pos === 0 && (this.$el.center.top < (this.height / 2) || viewport_height < (this.$el.bottom + (this.height / 2)))) {
             return false;   
         }
-        else if(this.settings.offset[1] > 0 && $(window).height() < (this.$el.bottom + this.height)) {
+        else if(pos > 0 && viewport_height < (this.$el.bottom + this.height)) {
             return false;
         }
         else {
@@ -295,12 +250,23 @@
         }
     }
 
+    /**
+     * Calculate optimized y position
+     */ 
     $.tooltipsy.prototype.getOptimizedPosY = function() {
-        if(this.$el.top > ($(window).height() - this.$el.bottom)) {
-            return -1 * Math.abs(this.settings.offset[1]);
+        var viewport_height = $(document).scrollTop() + $(window).height();
+        if(this.height < this.$el.top || this.height < (viewport_height - this.$el.bottom)) {
+            var pos = (this.settings.offset[1] === 0 ? 1 : this.settings.offset[1]);        
+            if(this.$el.top > (viewport_height - this.$el.bottom)) {
+                return -1 * Math.abs(pos);
+            }
+            else {
+                return 1 * Math.abs(pos);
+            }
         }
         else {
-            return 1 * Math.abs(this.settings.offset[1]);
+            // get best y fit for tooltip
+            throw 'larger tooltip height than viewport not yet implemented';
         }
     }
 
