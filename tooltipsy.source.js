@@ -50,38 +50,54 @@
             base.readify(); 
         }
         
-        base.$el.bind('mouseenter', function (e) {
-            if (base.settings.delay > 0) {
-                base.delaytimer = window.setTimeout(function () {
-                    window.clearTimeout(base.delayouttimer);
-                    base.delayouttimer = null;
-                    base.enter(e);
-                }, base.settings.delay);
-            }
-            else {
+        if(base.settings.enterEvent) {
+            base.$el.bind(base.settings.enterEvent, function (e) {
+                base.show(e);
+            });
+        }
+        
+        if(base.settings.leaveEvent) {
+            base.$el.bind(base.settings.leaveEvent, function (e) {
+                base.hide(e);
+            });
+        }
+    };
+    
+    $.tooltipsy.prototype.show = function(e) {
+        var base = this;
+        if (base.settings.delay > 0) {
+            base.delaytimer = window.setTimeout(function () {
                 window.clearTimeout(base.delayouttimer);
                 base.delayouttimer = null;
                 base.enter(e);
-            }
-        }).bind('mouseleave', function (e) {
-            // if tooltip lays over root element, dont respond to mouse leave
-            if($(e.relatedTarget).parents().filter(base.$tipsy).length > 0) {
-                return false;
-            }
-
-            if(base.settings.delayOut > 0) {                
-                window.clearTimeout(base.delaytimer);
-                base.delaytimer = null;
-                base.delayouttimer = window.setTimeout(function() {
-                    base.leave(e);
-                }, base.settings.delayOut);
-            }
-            else {
-                window.clearTimeout(base.delaytimer);
-                base.delaytimer = null;
+            }, base.settings.delay);
+        }
+        else {
+            window.clearTimeout(base.delayouttimer);
+            base.delayouttimer = null;
+            base.enter(e);
+        }
+    };
+    
+    $.tooltipsy.prototype.hide = function(e) {
+        var base = this;
+        // if tooltip lays over root element, dont respond to mouse leave
+        if($(e.relatedTarget).parents().filter(base.$tipsy).length > 0) {
+            return false;
+        }
+    
+        if(base.settings.delayOut > 0) {                
+            window.clearTimeout(base.delaytimer);
+            base.delaytimer = null;
+            base.delayouttimer = window.setTimeout(function() {
                 base.leave(e);
-            }
-        });
+            }, base.settings.delayOut);
+        }
+        else {
+            window.clearTimeout(base.delaytimer);
+            base.delaytimer = null;
+            base.leave(e);
+        }
     };
 
     $.tooltipsy.prototype.enter = function (e) {
@@ -379,7 +395,9 @@
             pointer: 'pointer'
         },
         delay: 200,
-        pointer: false
+        pointer: false,
+        enterEvent: 'mouseenter',
+        leaveEvent: 'mouseleave'
     };
 
     $.fn.tooltipsy = function(options) {   
